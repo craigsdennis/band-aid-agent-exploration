@@ -1,3 +1,20 @@
+Nothing to see here.
+
+You've been warned.
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
 # Band Aid
 
 Take a photo of a concert poster, get a playlist with each bands top 3 songs if they exist on Spotify and do research about the band and their live performances.
