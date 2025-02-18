@@ -20,35 +20,6 @@ const PosterMetadataSchema = z.object({
 	slug: z.string({ description: 'A suggested URL safe slug for this event, based on headlining band, location, and the year' }),
 });
 
-async function extractPosterMetadata(env: Env, key: string): Promise<PosterMetadata | undefined> {
-	const fileUpload = await env.BAND_AID.get(key);
-	if (fileUpload === null) {
-		return;
-	}
-	const contentType = fileUpload.httpMetadata?.contentType;
-	const aBuffer = await fileUpload.arrayBuffer();
-	const base64String = Buffer.from(aBuffer).toString('base64');
-	const oai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
-	const completion = await oai.beta.chat.completions.parse({
-		model: 'gpt-4o',
-		messages: [
-			{
-				role: 'user',
-				content: [
-					{ type: 'text', text: `Extract the information from this concert poster. The current date is ${new Date()}` },
-					{ type: 'image_url', image_url: { url: `data:${contentType};base64,${base64String}` } },
-				],
-			},
-		],
-		response_format: zodResponseFormat(PosterMetadataSchema, 'poster'),
-	});
-	const poster = completion.choices[0].message.parsed;
-	if (poster === null) {
-		return;
-	}
-	return poster;
-}
-
 export type PosterMetadata = z.infer<typeof PosterMetadataSchema>;
 
 export class PosterAgent extends DurableObject<Env> {
