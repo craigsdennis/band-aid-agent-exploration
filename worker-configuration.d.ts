@@ -6,6 +6,7 @@ interface Env {
 	SPOTIFY_CLIENT_ID: string;
 	SPOTIFY_CLIENT_SECRET: string;
 	PUBLIC_POSTER_HOST: string;
+	ORCHESTRATOR: DurableObjectNamespace<import("./src/index").Orchestrator>;
 	POSTER_AGENT: DurableObjectNamespace<import("./src/index").PosterAgent>;
 	SPOTIFY_USER: DurableObjectNamespace<import("./src/index").SpotifyUser>;
 	BAND_AID: R2Bucket;

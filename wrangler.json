@@ -35,12 +35,13 @@
 	],
 	"durable_objects": {
 		"bindings": [
+			{ "class_name": "Orchestrator", "name": "ORCHESTRATOR" },
 			{ "class_name": "PosterAgent", "name": "POSTER_AGENT" },
 			{ "class_name": "SpotifyUser", "name": "SPOTIFY_USER" }
 		]
 	},
 	"migrations": [
-		{ "new_sqlite_classes": ["PosterAgent", "SpotifyUser"], "tag": "v1" }
+		{ "new_sqlite_classes": ["Orchestrator", "PosterAgent", "SpotifyUser"], "tag": "v1" }
 	],
 	"workflows": [{ "binding": "PLAYLISTER", "class_name": "Playlister", "name": "Playlister" }]
 
