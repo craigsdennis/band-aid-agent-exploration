@@ -22,11 +22,27 @@ export class SpotifyUser extends DurableObject<Env> {
 			.raw();
 	}
 
-	async initialize(profile: UserProfile, accessToken: string, refreshToken: string) {
+	async initialize(profile: UserProfile, tokenResult: AccessToken) {
 		this.setConfig('id', profile.id);
 		this.setConfig('profileJSON', JSON.stringify(profile));
-		this.setConfig('accessToken', accessToken);
-		this.setConfig('refreshToken', refreshToken);
+		this.setConfig('tokenResultJSON', JSON.stringify(tokenResult));
+	}
+
+	getAllConfig() {
+		const rows = this.sql.exec(`SELECT config_key, config_value FROM config ORDER BY config_key`).toArray();
+		const config = {};
+		for (const row of rows) {
+			const key = row.config_key as string;
+			const value = row.config_value as string;
+			// @ts-ignore - Yuck
+			config[key] = value;
+		}
+		return config;
+	}
+
+	async tearDown() {
+		// Goodnight sweet prince
+		this.ctx.storage.deleteAll();
 	}
 
 	setConfig(key: string, value: string) {
@@ -56,12 +72,10 @@ export class SpotifyUser extends DurableObject<Env> {
 	}
 
 	getSdk(): SpotifyApi {
-		const accessToken: AccessToken = {
-			access_token: this.getConfig("accessToken") as string,
-			token_type: "bearer",
-			expires_in: 3600,
-			refresh_token: this.getConfig("refreshToken") as string
-		}
+		const config = this.getAllConfig();
+		console.log({config});
+		const tokenResultJSON = this.getConfig("tokenResultJSON");
+		const accessToken: AccessToken = JSON.parse(tokenResultJSON as string);
 		// Not sure refresh will work
 		return SpotifyApi.withAccessToken(this.env.SPOTIFY_CLIENT_ID, accessToken);
 	}
@@ -69,6 +83,7 @@ export class SpotifyUser extends DurableObject<Env> {
 	async createPlaylist(name: string, description: string, trackUris: string[]) {
 		const sdk = this.getSdk();
 		const userId = this.getConfig("id") as string;
+		console.log({userId, name, description, trackUris});
 		const playlist = await sdk.playlists.createPlaylist(userId, {
 			name,
 			description,

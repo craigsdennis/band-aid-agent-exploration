@@ -151,7 +151,7 @@ export class PosterAgent extends DurableObject<Env> {
 			this.sql.exec(`UPDATE bands SET genre=? WHERE id=?`, options.genre, id).raw();
 		}
 		for (const link of options.links) {
-			this.sql.exec(`INSERT INTO links (title, description, url, band_id) VALUES (?, ?, ?, ?)`, link.title, link.description, link.url, id).raw();
+			this.sql.exec(`INSERT INTO links (title, summary, url, band_id) VALUES (?, ?, ?, ?)`, link.title, link.summary, link.url, id).raw();
 		}
 	}
 

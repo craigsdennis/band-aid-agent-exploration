@@ -7,7 +7,7 @@ import { Orchestrator } from './durable_objects/orchestrator';
 import { Layout } from './components/layout';
 import { html } from 'hono/html';
 import { setCookie } from 'hono/cookie';
-import { UserProfile } from '@spotify/web-api-ts-sdk';
+import { AccessToken, UserProfile } from '@spotify/web-api-ts-sdk';
 
 export { Playlister, SpotifyUser, PosterAgent, Orchestrator };
 
@@ -89,7 +89,7 @@ app.get('/spotify/callback', async (c) => {
 		method: 'POST',
 		body: form.toString(),
 	});
-	const tokenResult: { access_token: string; refresh_token: string } = await response.json();
+	const tokenResult: AccessToken = await response.json();
 	console.log(tokenResult);
 	// Grab the userid (use the SDK?)
 	const profileResponse = await fetch('https://api.spotify.com/v1/me', {
@@ -100,11 +100,28 @@ app.get('/spotify/callback', async (c) => {
 	const profile: UserProfile = await profileResponse.json();
 	const id = c.env.SPOTIFY_USER.idFromName(profile.id);
 	const stub = c.env.SPOTIFY_USER.get(id);
-	stub.initialize(profile, tokenResult.access_token, tokenResult.refresh_token);
+	await stub.initialize(profile, tokenResult);
 	setCookie(c, 'spotifyUserId', profile.id);
 	setCookie(c, 'spotifyAccessToken', tokenResult.access_token);
 	return c.redirect("/");
 });
+
+app.get("/spotify/reset/:userId", async(c) => {
+	const {userId} = c.req.param();
+	const id = c.env.SPOTIFY_USER.idFromName(userId);
+	const spotifyUser = c.env.SPOTIFY_USER.get(id);
+	await spotifyUser.tearDown();
+	return c.json({success: true, userId});
+});
+
+app.get("/spotify/debug/:userId", async(c) => {
+	const {userId} = c.req.param();
+	const id = c.env.SPOTIFY_USER.idFromName(userId);
+	const spotifyUser = c.env.SPOTIFY_USER.get(id);
+	const trackUris = ["spotify:track:2XTggG0CO00DkQy3U9rj1e","spotify:track:2qQscK3kQK1UjjXPnh3P9f","spotify:track:1wofOfScxeEqlG6pVYmPtm","spotify:track:1hFyrp5jX9AEClQFPGnWZ9","spotify:track:4769MGJh5X13ALSgBg42D9","spotify:track:5K8g0FCy2XA5DI5qB2rwDY","spotify:track:4EXgrKs3PUWRlttsRTnLda","spotify:track:2LTR9UDlN1EPdpAk9QWBt4","spotify:track:5lNf1QuG7smWG4GNzMIHlE","spotify:track:1fc8NCPBhPgFRbMZwfmEtS","spotify:track:2kFwhpS6Iy97ASr53brfOr","spotify:track:53Nrb6gTXzn4NuvSTPoQ5m","spotify:track:2nqe8trdmgK0VWcVdItQru","spotify:track:6p61H9MOVxj7sudcI0sPKL","spotify:track:6TduZehvhlDk2NHqaZOcG4","spotify:track:5k6qXWZ61BOhQ9JI0uYIcx","spotify:track:2kcgQDVJ0oPKKhBPMumdg7","spotify:track:0qPPer0cz9zJvynuML5tNa","spotify:track:1iSN69md8w2VsrnnmU4Eli","spotify:track:1lu3ScgZ5UvVXCMPnzUSuo","spotify:track:0QZ0eMq66Dg0ZauChIPdIc","spotify:track:4ws1jmqRmNsVF0vVnMzoou","spotify:track:5HioZPQVpDiW6d0RjgYFEK","spotify:track:3AOWDLUEX7wTkjfLbooIjS","spotify:track:2QVrKjyJAKwOgQq9SSpOPs","spotify:track:5LFgKjYUT1rlSXQc8sdkhT"];
+	const playlist = await spotifyUser.createPlaylist("Debug playlist", "Debug Description", trackUris);
+	return c.json({playlist, trackUris, userId});
+})
 
 app.get('/posters/:slug', async (c) => {
 	const { slug } = c.req.param();

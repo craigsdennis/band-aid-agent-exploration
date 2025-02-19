@@ -44,13 +44,12 @@ export class Playlister extends WorkflowEntrypoint<Env, Params> {
 			if (spotifyArtist) {
 				const result = await step.do('Update Band information', async () => {
 					const poster = await this.getPosterAgent(posterIdString);
-					// TODO: There's a bug here???
 					await poster.updateBandWithName(bandName, {
 						genre: spotifyArtist.genres.join(', '),
 						links: [
 							{
 								title: `${spotifyArtist.name} on Spotify`,
-								description: 'Official Spotify Artist Page',
+								summary: 'Official Spotify Artist Page',
 								url: spotifyArtist.href,
 							},
 						],
