@@ -11,12 +11,12 @@ const EventSchema = z.object({
 	isUpcoming: z.boolean({ description: 'Have all concert dates not yet happened, or is this from the past' }),
 });
 
-// TODO: Maybe: Tour name?
 const PosterMetadataSchema = z.object({
 	// Often there are numerous bands
 	bandNames: z.array(z.string()),
 	// There can be multiple places on a poster
 	events: z.array(EventSchema),
+	tourName: z.string({description: 'The name of the tour if it exists, otherwise use the headliner, location, and the year. Example: "Beastie Boys - New York - 1986"'}),
 	slug: z.string({ description: 'A suggested URL safe slug for this event, based on headlining band, location, and the year' }),
 });
 
@@ -244,6 +244,7 @@ export class PosterAgent extends DurableObject<Env> {
 		this.setConfig('posterUrl', url);
 		this.setConfig('metadataJSON', JSON.stringify(posterMetadata));
 		this.setConfig('slug', posterMetadata.slug);
+		this.setConfig('tourName', posterMetadata.tourName);
 		// Create the Playlist...call onSpotifyPlaylistCreated()
 		await this.env.PLAYLISTER.create({
 			params: {

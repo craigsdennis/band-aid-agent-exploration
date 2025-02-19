@@ -72,13 +72,8 @@ export class Playlister extends WorkflowEntrypoint<Env, Params> {
 				await poster.addStatusUpdate(`Creating new playlist for ${this.env.SPOTIFY_MAIN_USER_ID}`);
 				const id = this.env.SPOTIFY_USER.idFromName(this.env.SPOTIFY_MAIN_USER_ID);
 				const spotifyUser = this.env.SPOTIFY_USER.get(id);
-				// TODO: Describe this playlist in English and get title
-				const playlistUrl = await spotifyUser.createPlaylist(
-					event.payload.posterSlug,
-					`A Band Aid Playlist: ${event.payload.posterSlug}`,
-					trackUris
-				);
-				return playlistUrl;
+				const playlist = await spotifyUser.createPlaylistFromPosterId(posterIdString, trackUris);
+				return playlist.href;
 
 			});
 			return playlistUrl;

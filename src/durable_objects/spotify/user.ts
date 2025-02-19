@@ -78,17 +78,22 @@ export class SpotifyUser extends DurableObject<Env> {
 		return SpotifyApi.withAccessToken(this.env.SPOTIFY_CLIENT_ID, accessToken);
 	}
 
-	async createPlaylist(name: string, description: string, trackUris: string[]): Promise<string> {
+	// NOTE: Not slug
+	async createPlaylistFromPosterId(posterIdString: string, trackUris: string[]) {
 		const sdk = this.getSdk();
 		const userId = this.getConfig("id") as string;
-		console.log({userId, name, description, trackUris});
+		const id = this.env.POSTER_AGENT.idFromString(posterIdString);
+		const poster = this.env.POSTER_AGENT.get(id);
+		const posterUrl = await poster.getConfig("posterUrl");
+		const tourName = await poster.getConfig("tourName");
 		const playlist = await sdk.playlists.createPlaylist(userId, {
-			name,
-			description,
+			name: `Band Aid / ${tourName}`,
+			description: `A Band Aid Playlist for ${tourName}`,
 			collaborative: true,
 			public: true
 		});
 		await sdk.playlists.addItemsToPlaylist(playlist.id, trackUris);
-		return playlist.href;
+		return playlist;
 	}
+
 }
