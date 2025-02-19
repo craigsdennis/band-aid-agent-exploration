@@ -8,7 +8,7 @@ const EventSchema = z.object({
 	venue: z.string({ description: 'The name of the venue where the event is happening' }),
 	location: z.string({ description: 'The name of the city where this is happening' }),
 	date: z.string({ description: 'The date and time when this is happening in ISO 9601 format' }),
-	isUpcoming: z.boolean({ description: 'Have all concert dates not yet happened, or is this a folder from the past' }),
+	isUpcoming: z.boolean({ description: 'Have all concert dates not yet happened, or is this from the past' }),
 });
 
 // TODO: Maybe: Tour name?
@@ -148,10 +148,10 @@ export class PosterAgent extends DurableObject<Env> {
 	updateBandWithName(name: string, options) {
 		const { id } = this.sql.exec(`SELECT id FROM bands WHERE name=?`, name).one();
 		if (options.genre) {
-			this.sql.exec(`UPDATE bands SET genre=? WHERE id=?`, options.genre, id);
+			this.sql.exec(`UPDATE bands SET genre=? WHERE id=?`, options.genre, id).raw();
 		}
 		for (const link of options.links) {
-			this.sql.exec(`INSERT INTO links (title, description, url, band_id) VALUES (?, ?, ?, ?)`, link.title, link.description, link.url, id);
+			this.sql.exec(`INSERT INTO links (title, description, url, band_id) VALUES (?, ?, ?, ?)`, link.title, link.description, link.url, id).raw();
 		}
 	}
 
@@ -245,12 +245,10 @@ export class PosterAgent extends DurableObject<Env> {
 		this.setConfig('metadataJSON', JSON.stringify(posterMetadata));
 		this.setConfig('slug', posterMetadata.slug);
 		// Create the Playlist...call onSpotifyPlaylistCreated()
-		// Add logs table
-
-		// await this.env.PLAYLISTER.create({
-		// 	params: {
-		// 		posterSlug: posterMetadata.slug,
-		// 	},
-		// });
+		await this.env.PLAYLISTER.create({
+			params: {
+				posterSlug: posterMetadata.slug,
+			},
+		});
 	}
 }

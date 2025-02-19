@@ -1,4 +1,5 @@
 OPENAI_API_KEY="your-project-key"
 SPOTIFY_CLIENT_ID="your-spotify-client-id"
 SPOTIFY_CLIENT_SECRET="your-spotify-client-secret"
+SPOTIFY_MAIN_USER_ID="your-spotify-user-name"
 PUBLIC_POSTER_HOST="https://your-public-r2-bucket"

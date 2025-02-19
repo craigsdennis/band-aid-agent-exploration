@@ -1,5 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
-import { SpotifyApi, UserProfile } from '@spotify/web-api-ts-sdk';
+import { AccessToken, SpotifyApi, UserProfile } from '@spotify/web-api-ts-sdk';
 
 export class SpotifyUser extends DurableObject<Env> {
 	sql: SqlStorage;
@@ -23,6 +23,7 @@ export class SpotifyUser extends DurableObject<Env> {
 	}
 
 	async initialize(profile: UserProfile, accessToken: string, refreshToken: string) {
+		this.setConfig('id', profile.id);
 		this.setConfig('profileJSON', JSON.stringify(profile));
 		this.setConfig('accessToken', accessToken);
 		this.setConfig('refreshToken', refreshToken);
@@ -52,6 +53,30 @@ export class SpotifyUser extends DurableObject<Env> {
 		const { value } = this.sql.exec(`SELECT config_value FROM config WHERE config_key=?`, key).next();
 		if (!value) return;
 		return value.config_value as string;
+	}
+
+	getSdk(): SpotifyApi {
+		const accessToken: AccessToken = {
+			access_token: this.getConfig("accessToken") as string,
+			token_type: "bearer",
+			expires_in: 3600,
+			refresh_token: this.getConfig("refreshToken") as string
+		}
+		// Not sure refresh will work
+		return SpotifyApi.withAccessToken(this.env.SPOTIFY_CLIENT_ID, accessToken);
+	}
+
+	async createPlaylist(name: string, description: string, trackUris: string[]) {
+		const sdk = this.getSdk();
+		const userId = this.getConfig("id") as string;
+		const playlist = await sdk.playlists.createPlaylist(userId, {
+			name,
+			description,
+			collaborative: true,
+			public: true
+		});
+		await sdk.playlists.addItemsToPlaylist(playlist.id, trackUris);
+		return playlist.href;
 	}
 
 	// Memoize Spotify client?

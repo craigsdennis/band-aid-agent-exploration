@@ -5,6 +5,7 @@ interface Env {
 	OPENAI_API_KEY: string;
 	SPOTIFY_CLIENT_ID: string;
 	SPOTIFY_CLIENT_SECRET: string;
+	SPOTIFY_MAIN_USER_ID: string;
 	PUBLIC_POSTER_HOST: string;
 	ORCHESTRATOR: DurableObjectNamespace<import("./src/index").Orchestrator>;
 	POSTER_AGENT: DurableObjectNamespace<import("./src/index").PosterAgent>;
