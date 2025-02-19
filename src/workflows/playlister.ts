@@ -58,23 +58,31 @@ export class Playlister extends WorkflowEntrypoint<Env, Params> {
 					return {success: true};
 				});
 				// TODO: https://developer.spotify.com/documentation/web-api/reference/get-an-artists-top-tracks
-				trackUris = await step.do(`Find top tracks for ${bandName}`, async () => {
+				trackUris = await step.do(`Find top 3 tracks for ${bandName}`, async () => {
 					const spotifyApi = this.getSpotifyClient();
 					const results = await spotifyApi.artists.topTracks(spotifyArtist.id, 'US');
-					return trackUris.concat(results.tracks.map((t) => t.uri));
+					return trackUris.concat(results.tracks.slice(0, 3).map((t) => t.uri));
 				});
 			}
 		}
 		if (trackUris.length > 0) {
 			const playlistUrl = await step.do("Creating Playlist from found tracks", async () => {
 				const poster = await this.getPosterAgent(posterIdString);
+				// NOTE: This is using the default main user because at this point who is the user?
 				await poster.addStatusUpdate(`Creating new playlist for ${this.env.SPOTIFY_MAIN_USER_ID}`);
 				const id = this.env.SPOTIFY_USER.idFromName(this.env.SPOTIFY_MAIN_USER_ID);
 				const spotifyUser = this.env.SPOTIFY_USER.get(id);
-				await spotifyUser.createPlaylist(event.payload.posterSlug, "A Band Aid Playlist", trackUris);
-			});
-		}
+				// TODO: Describe this playlist in English and get title
+				const playlistUrl = await spotifyUser.createPlaylist(
+					event.payload.posterSlug,
+					`A Band Aid Playlist: ${event.payload.posterSlug}`,
+					trackUris
+				);
+				return playlistUrl;
 
-		return 'done';
+			});
+			return playlistUrl;
+		}
+		return "nope";
 	}
 }

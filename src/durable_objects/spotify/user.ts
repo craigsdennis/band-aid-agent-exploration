@@ -72,15 +72,13 @@ export class SpotifyUser extends DurableObject<Env> {
 	}
 
 	getSdk(): SpotifyApi {
-		const config = this.getAllConfig();
-		console.log({config});
 		const tokenResultJSON = this.getConfig("tokenResultJSON");
 		const accessToken: AccessToken = JSON.parse(tokenResultJSON as string);
 		// Not sure refresh will work
 		return SpotifyApi.withAccessToken(this.env.SPOTIFY_CLIENT_ID, accessToken);
 	}
 
-	async createPlaylist(name: string, description: string, trackUris: string[]) {
+	async createPlaylist(name: string, description: string, trackUris: string[]): Promise<string> {
 		const sdk = this.getSdk();
 		const userId = this.getConfig("id") as string;
 		console.log({userId, name, description, trackUris});
@@ -93,7 +91,4 @@ export class SpotifyUser extends DurableObject<Env> {
 		await sdk.playlists.addItemsToPlaylist(playlist.id, trackUris);
 		return playlist.href;
 	}
-
-	// Memoize Spotify client?
-	// Refresh
 }
