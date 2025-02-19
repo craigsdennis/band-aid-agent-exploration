@@ -74,7 +74,7 @@ export class SpotifyUser extends DurableObject<Env> {
 	getSdk(): SpotifyApi {
 		const tokenResultJSON = this.getConfig("tokenResultJSON");
 		const accessToken: AccessToken = JSON.parse(tokenResultJSON as string);
-		// Not sure refresh will work
+		// Not sure refresh will work (TODO: I don't think it does automatically, do some stuff here to make sure it's good)
 		return SpotifyApi.withAccessToken(this.env.SPOTIFY_CLIENT_ID, accessToken);
 	}
 
@@ -84,6 +84,7 @@ export class SpotifyUser extends DurableObject<Env> {
 		const userId = this.getConfig("id") as string;
 		const id = this.env.POSTER_AGENT.idFromString(posterIdString);
 		const poster = this.env.POSTER_AGENT.get(id);
+		// TODO: Use the URL to get the image and then resize it...IMAGES binding?
 		const posterUrl = await poster.getConfig("posterUrl");
 		const tourName = await poster.getConfig("tourName");
 		const playlist = await sdk.playlists.createPlaylist(userId, {
@@ -95,5 +96,4 @@ export class SpotifyUser extends DurableObject<Env> {
 		await sdk.playlists.addItemsToPlaylist(playlist.id, trackUris);
 		return playlist;
 	}
-
 }

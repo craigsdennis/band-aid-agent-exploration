@@ -21,20 +21,16 @@ export class Playlister extends WorkflowEntrypoint<Env, Params> {
 	}
 
 	async run(event: Readonly<WorkflowEvent<Params>>, step: WorkflowStep): Promise<string> {
-		const posterIdString = await step.do('Get Poster ID From Slug', async () => {
-			const orchestrator = this.getOrchestrator();
-			const posterIdString = await orchestrator.getPosterIdFromSlug(event.payload.posterSlug);
-			return posterIdString as string;
-		});
+		const orchestrator = this.getOrchestrator();
+		const posterIdString = await orchestrator.getPosterIdFromSlug(event.payload.posterSlug);
+		const poster = await this.getPosterAgent(posterIdString);
 		const bandNames = await step.do('Get Band Names', async () => {
-			const poster = await this.getPosterAgent(posterIdString);
 			const bandNames = await poster.getBandNames();
 			return bandNames;
 		});
 		let trackUris: string[] = [];
 		for (const bandName of bandNames) {
 			const spotifyArtist = await step.do('Find Spotify Artist', async () => {
-				const poster = await this.getPosterAgent(posterIdString);
 				poster.addStatusUpdate(`Searching Spotify for Artist: ${bandName}`);
 				const spotifyApi = this.getSpotifyClient();
 				const results = await spotifyApi.search(bandName, ['artist']);
@@ -43,7 +39,6 @@ export class Playlister extends WorkflowEntrypoint<Env, Params> {
 			});
 			if (spotifyArtist) {
 				const result = await step.do('Update Band information', async () => {
-					const poster = await this.getPosterAgent(posterIdString);
 					await poster.updateBandWithName(bandName, {
 						genre: spotifyArtist.genres.join(', '),
 						links: [
@@ -67,7 +62,6 @@ export class Playlister extends WorkflowEntrypoint<Env, Params> {
 		}
 		if (trackUris.length > 0) {
 			const playlistUrl = await step.do("Creating Playlist from found tracks", async () => {
-				const poster = await this.getPosterAgent(posterIdString);
 				// NOTE: This is using the default main user because at this point who is the user?
 				await poster.addStatusUpdate(`Creating new playlist for ${this.env.SPOTIFY_MAIN_USER_ID}`);
 				const id = this.env.SPOTIFY_USER.idFromName(this.env.SPOTIFY_MAIN_USER_ID);

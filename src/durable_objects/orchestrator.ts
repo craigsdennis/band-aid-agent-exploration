@@ -60,7 +60,7 @@ export class Orchestrator extends DurableObject<Env> {
 		return posters;
 	}
 
-	async getPosterIdFromSlug(slug: string) {
+	async getPosterIdFromSlug(slug: string): Promise<string> {
 		const { id } = this.sql.exec(`SELECT id FROM poster_submissions WHERE slug=? LIMIT 1;`, slug).one();
 		return id;
 	}
