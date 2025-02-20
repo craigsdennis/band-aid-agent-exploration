@@ -55,7 +55,7 @@ app.get('/', async (c) => {
 
 app.get('/spotify/login', async (c) => {
 	const state = crypto.randomUUID();
-	const scope = 'playlist-read-collaborative playlist-modify-public';
+	const scope = 'playlist-read-collaborative playlist-modify-public user-read-recently-played';
 	const url = new URL(c.req.url);
 	url.pathname = '/spotify/callback';
 
@@ -118,8 +118,12 @@ app.get("/spotify/debug/:userId", async(c) => {
 	const {userId} = c.req.param();
 	const id = c.env.SPOTIFY_USER.idFromName(userId);
 	const spotifyUser = c.env.SPOTIFY_USER.get(id);
-	const token = await spotifyUser.getAccessToken();
-	return c.json({success: true, token, userId});
+	let since: number = Date.now().valueOf();
+	since -= (24 * 60* 60 * 1000);
+	const trackUris = await spotifyUser.getRecentTrackUris(since);
+	const addedTrackUris = await spotifyUser.getAddedTrackUris();
+	const matches = trackUris.filter(t => addedTrackUris.includes(t));
+	return c.json({success: true, since, trackUris, addedTrackUris, matches});
 });
 
 app.get('/posters/:slug', async (c) => {

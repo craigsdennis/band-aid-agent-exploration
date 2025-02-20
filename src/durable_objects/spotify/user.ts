@@ -93,6 +93,41 @@ export class SpotifyUser extends DurableObject<Env> {
 		return tokenResult;
 	}
 
+	async getRecentTrackUris(since: number): Promise<string[]> {
+		const sdk = await this.getSdk();
+		const tracks = await sdk.player.getRecentlyPlayedTracks(50, {
+			timestamp: since,
+			type: "after"
+		});
+		const uris = tracks.items.map((item) => item.track.uri);
+		return uris;
+	}
+
+	async getAddedTrackUris(): Promise<string[]> {
+		const rows = this.sql.exec(`SELECT uri FROM added_tracks`).toArray();
+		return rows.map(row => row.uri as string);
+	}
+
+	async checkForRecentPlaylistListens(): Promise<string[]> {
+		const TEN_DAYS = (10 * 24 * 60 * 60 * 100);
+		// TODO: Do a listen log with aggregate count instead of config
+		let lastCheckString = this.getConfig("lastCheckForListens");
+		let lastCheck: number;
+		if (lastCheckString) {
+			lastCheck = parseInt(lastCheckString);
+		} else {
+			lastCheck = Date.now().valueOf();
+		}
+		const recentTrackUris = await this.getRecentTrackUris(lastCheck);
+		const addedTrackUris = await this.getAddedTrackUris();
+		const matchedUris = recentTrackUris.filter((t) => addedTrackUris.includes(t));
+		// TODO: Loop the matches and notify the poster
+		// ???: Time is important right?
+		// TODO: Add userId + time to Poster.listens?
+		this.setConfig("lastCheckForListens", Date.now().valueOf().toString());
+		return matchedUris;
+	}
+
 	async refreshToken(): Promise<AccessToken> {
 		console.log('Refreshing token');
 		const refreshToken = this.getConfig("refreshToken") as string;
