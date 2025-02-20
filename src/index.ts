@@ -114,6 +114,14 @@ app.get("/spotify/reset/:userId", async(c) => {
 	return c.json({success: true, userId});
 });
 
+app.get("/spotify/debug/:userId", async(c) => {
+	const {userId} = c.req.param();
+	const id = c.env.SPOTIFY_USER.idFromName(userId);
+	const spotifyUser = c.env.SPOTIFY_USER.get(id);
+	const token = await spotifyUser.getAccessToken();
+	return c.json({success: true, token, userId});
+});
+
 app.get('/posters/:slug', async (c) => {
 	const { slug } = c.req.param();
 	const posterStub = await getPosterFromSlug(c.env, slug);
